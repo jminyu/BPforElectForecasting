@@ -29,7 +29,9 @@ def makeMatrix(I, J, fill=0.0):
 
 # our sigmoid function, tanh is a little nicer than the standard 1/(1+e^-x)
 def sigmoid(x):
-    return math.tanh(x)
+    value = math.tanh(x)
+    #print value
+    return value
 
 # derivative of our sigmoid function, in terms of the output (i.e. y)
 def dsigmoid(y):
@@ -129,8 +131,35 @@ class NN:
 
 
     def test(self, patterns):
+        cfile = open('./consoution.dat','w')
         for p in patterns:
-            print(p, '->', self.update(p))
+            temp =  self.update(p)
+            if max(temp)==temp[0]:
+                print 0
+                cfile.write(str(0))
+            elif max(temp)==temp[1]:
+                print 1
+                cfile.write(str(1))
+            elif max(temp)==temp[2]:
+                print 2
+                cfile.write(str(2))
+            elif max(temp)==temp[3]:
+                print 3
+                cfile.write(str(3))
+            elif max(temp)==temp[4]:
+                print 4
+                cfile.write(str(4))
+            elif max(temp)==temp[5]:
+                print 5
+                cfile.write(str(5))
+            elif max(temp)==temp[6]:
+                print 6
+                cfile.write(str(6))
+            else:
+                print 7
+                cfile.write(str(7))
+            cfile.write('\n')
+        cfile.close()
 
     def weights(self):
         print('Input weights:')
@@ -141,27 +170,28 @@ class NN:
         for j in range(self.nh):
             print(self.wo[j])
 
-    def train(self, patterns,label_dat, iterations=2000, N=0.5, M=0.1):
+    def train(self, patterns,label_dat, iterations=200, N=0.1, M=0.01):
         efile = open('error_rate.dat','w')
         wfile = open('weight.dat','w')
         # N: learning rate
         # M: momentum factor
-        #dat_error = np.zeros((iterations/100,1),dtype=float)
+        dat_error = np.zeros((iterations,1),dtype=float)
         error_count  =0
-        count = 0;
+        countt = 0;
         for i in range(iterations):
             temp_error = 0.0
             for p in patterns:
                 inputs = p
-                targets = label_dat[count,:]
+                targets = label_dat[countt,:]
                 self.update(inputs)
                 temp_error = temp_error + self.backPropagate(targets, N, M)
-            #if i % 10 == 0:
-            #    print('error %-.5f' % temp_error)
-            #    dat_error[error_count] = temp_error
-            #    error_count =  error_count +1
+                countt = countt+1
+            countt=0
+            print('error %-.5f' % temp_error)
+            dat_error[error_count] = temp_error
+            error_count =  error_count +1
+            efile.write(str(temp_error))
 
-            #    efile.write(str(temp_error))
 
         wfile.write('input-to-hidden weight\n')
         for i in range(self.ni):
@@ -173,6 +203,9 @@ class NN:
             for k in range(self.no):
                  wfile.write(str(self.wo[j][k]))
 
+        plt.figure()
+        plt.plot(dat_error,'r.-')
+        plt.show()
         efile.close()
         wfile.close()
 
@@ -184,14 +217,15 @@ def Prediction_test(dat,label_dat,test_dat):
     test_pat = test_dat
 
     # create a network with two input, two hidden, and one output nodes
-    n = NN(7, 15, 7)
+    n = NN(7, 10, 7)
     # train it with some patterns
     n.train(pat,label_dat)
     # test it
     print ('processing is finished')
     n.test(test_pat)
 
-def Regularization(p_dat_file,weather_dat,label_dat,c_count):
+def Regularization(filename, p_dat_file,weather_dat,label_dat,c_count):
+    w2_file = open(filename,'w')
     min_value = 869970
     max_value = 1597120
     r1 = (max_value-min_value)/7
@@ -202,6 +236,7 @@ def Regularization(p_dat_file,weather_dat,label_dat,c_count):
         p_split_dat = p_line.split('\t')
         for i in range(7):
             weather_dat[b_count,i] = float(p_split_dat[i+1])
+            w2_file.write(str(p_split_dat[i+1]))
 
         # the maximum power consumption value is 869970
         # the minimum power consumption value is 1597120
@@ -222,7 +257,7 @@ def Regularization(p_dat_file,weather_dat,label_dat,c_count):
             label_dat[b_count] = [0,0,0,0,0,1,0]
         if temp > min_value+6*r1 and temp <= min_value+r1*8:
             label_dat[b_count] = [0,0,0,0,0,0,1]
-        #print label_dat[b_count]
+        print label_dat[b_count]
         b_count = b_count +1
         if b_count==c_count:
             break
@@ -230,13 +265,13 @@ def Regularization(p_dat_file,weather_dat,label_dat,c_count):
     p_dat_file.close()
     #regularization for back propagation
     #divided by each maximum value
-    weather_dat[0,:] = weather_dat[0,:]/26.7
-    weather_dat[1,:] = weather_dat[1,:]/30.7
-    weather_dat[2,:] = weather_dat[2,:]/23.8
-    weather_dat[3,:] = weather_dat[3,:]/18.2
-    weather_dat[4,:] = weather_dat[4,:]/5.2
-    weather_dat[5,:] = weather_dat[5,:]/3
-    weather_dat[6,:] = weather_dat[6,:]/100
+    weather_dat[:,0] = weather_dat[:,0]/26.7
+    weather_dat[:,1] = weather_dat[:,1]/30.7
+    weather_dat[:,2] = weather_dat[:,2]/23.8
+    weather_dat[:,3] = weather_dat[:,3]/18.2
+    weather_dat[:,4] = weather_dat[:,4]/5.2
+    weather_dat[:,5] = weather_dat[:,5]/3
+    weather_dat[:,6] = weather_dat[:,6]/100
     return weather_dat,label_dat
 
 
@@ -258,12 +293,22 @@ if __name__ == '__main__':
 
     weather_dat = np.zeros((c_count,7),dtype=float)
     label_dat = np.zeros((c_count,7),dtype=float)
-    test_w_dat = np.zeros((26,7),dtype = float)
-    t_label_dat = np.zeros((26,7),dtype = float)
+    test_w_dat = np.zeros((273,7),dtype = float)
+    t_label_dat = np.zeros((273,7),dtype = float)
 
     p_dat_file = open('./re_data.dat')
-    weather_dat,label_dat = Regularization(p_dat_file,weather_dat,label_dat,c_count)
-    t_dat_file = open('./test.dat')
-    test_w_dat,t_label_dat = Regularization(t_dat_file,test_w_dat,t_label_dat,26)
+    weather_dat,label_dat = Regularization('./re_regularize.dat',p_dat_file,weather_dat,label_dat,c_count)
+    t_dat_file = open('./temp_file.dat')
+    t_line = t_dat_file.readline()
+    t_count = 0
+    while t_line:
+        ts_dat = t_line.split('\t')
+        for i in range(len(ts_dat)-1):
+             test_w_dat[t_count,i] = float(ts_dat[i])
+        t_count = t_count+1
+        t_line = t_dat_file.readline()
+
 
     Prediction_test(weather_dat,label_dat,test_w_dat)
+    p_dat_file.close()
+    t_dat_file.close()
